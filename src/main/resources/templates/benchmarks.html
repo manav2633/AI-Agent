@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmarks - Multi-Agent Framework</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+</head>
+<body>
+    <header>
+        <h1>Benchmark Management</h1>
+        <nav>
+            <a th:href="@{/}">Dashboard</a>
+            <a th:href="@{/executions}">Executions</a>
+            <a th:href="@{/benchmarks}" class="active">Benchmarks</a>
+            <a th:href="@{/metrics}">Metrics</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Create Benchmark Task -->
+        <section class="card">
+            <h2>Create Benchmark Task</h2>
+            <form th:action="@{/benchmarks/tasks}" method="post">
+                <div class="grid-2">
+                    <label>Task Name
+                        <input type="text" name="name" required>
+                    </label>
+                    <label>Complexity
+                        <select name="complexity" required>
+                            <option th:each="complexity : ${complexities}" 
+                                    th:value="${complexity}" 
+                                    th:text="${complexity.displayName}">Complexity</option>
+                        </select>
+                    </label>
+                </div>
+                <label>Description
+                    <textarea name="description" required rows="2"></textarea>
+                </label>
+                <label>Task Input
+                    <textarea name="taskInput" required rows="4"></textarea>
+                </label>
+                <label>Expected Output (Optional)
+                    <textarea name="expectedOutput" rows="2"></textarea>
+                </label>
+                <button type="submit">Create Task</button>
+            </form>
+        </section>
+
+        <!-- Run Benchmark -->
+        <section class="card">
+            <h2>Run Benchmark</h2>
+            <form th:action="@{/api/benchmarks/execute}" method="post">
+                <div class="grid-3">
+                    <label>Benchmark Name
+                        <input type="text" name="name" required>
+                    </label>
+                    <label>Task
+                        <select name="taskId" required>
+                            <option th:each="task : ${tasks}" 
+                                    th:value="${task.id}" 
+                                    th:text="${task.name}">Task</option>
+                        </select>
+                    </label>
+                    <label>Iterations
+                        <input type="number" name="iterations" value="5" min="1" max="50">
+                    </label>
+                </div>
+                <label>Select Frameworks (Hold Ctrl/Cmd for multiple)
+                    <select name="frameworkTypes" multiple size="4" required>
+                        <option th:each="framework : ${frameworks}" 
+                                th:value="${framework}" 
+                                th:text="${framework.displayName}">Framework</option>
+                    </select>
+                </label>
+                <button type="submit">Run Benchmark</button>
+            </form>
+        </section>
+
+        <!-- Benchmark Tasks -->
+        <section class="card">
+            <h2>Available Tasks</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Complexity</th>
+                            <th>Description</th>
+                            <th>Active</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="task : ${tasks}">
+                            <td th:text="${task.id}">1</td>
+                            <td th:text="${task.name}">Task Name</td>
+                            <td>
+                                <span th:class="${'badge ' + (task.complexity == T(com.agentframework.model.TaskComplexity).SIMPLE ? 'success' : 
+                                                task.complexity == T(com.agentframework.model.TaskComplexity).EXPERT ? 'error' : 'warn')}"
+                                      th:text="${task.complexity.displayName}">Simple</span>
+                            </td>
+                            <td th:text="${#strings.abbreviate(task.description, 60)}">Description...</td>
+                            <td>
+                                <span th:class="${'badge ' + (task.active ? 'success' : 'warn')}"
+                                      th:text="${task.active ? 'Active' : 'Inactive'}">Active</span>
+                            </td>
+                            <td th:text="${#temporals.format(task.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>
+                            <td>
+                                <button class="btn-small" th:onclick="'viewTask(' + ${task.id} + ')'">View</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Active Benchmarks -->
+        <section class="card" th:if="${not #maps.isEmpty(activeBenchmarks)}">
+            <h2>Running Benchmarks</h2>
+            <div class="benchmark-grid">
+                <div th:each="benchmark : ${activeBenchmarks}" class="benchmark-card">
+                    <h4 th:text="${benchmark.value.name}">Benchmark Name</h4>
+                    <p>Status: <span th:class="${'badge ' + (benchmark.value.status == T(com.agentframework.model.BenchmarkRunStatus).COMPLETED ? 'success' : 
+                                              benchmark.value.status == T(com.agentframework.model.BenchmarkRunStatus).FAILED ? 'error' : 'warn')}"
+                                     th:text="${benchmark.value.status}">RUNNING</span></p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" 
+                             th:style="'width: ' + (${benchmark.value.totalExecutions > 0 ? (benchmark.value.completedExecutions * 100 / benchmark.value.totalExecutions) : 0}) + '%'"></div>
+                    </div>
+                    <p class="progress-text">
+                        <span th:text="${benchmark.value.completedExecutions}">0</span> / 
+                        <span th:text="${benchmark.value.totalExecutions}">10</span> executions
+                    </p>
+                    <button class="btn-small danger" th:onclick="'cancelBenchmark(\'' + ${benchmark.key} + '\')'">Cancel</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script th:src="@{/js/benchmark.js}"></script>
+</body>
+</html>

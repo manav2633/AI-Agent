@@ -1,0 +1,15 @@
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    color: #fff;
+  }
+  .badge.success { background: #16a085; }
+  .badge.warn    { background: #f39c12; }
+  .badge.error   { background: #e74c3c; }
+  .muted {
+    color: #777;
+    font-size: 0.9rem;
+  }
+  

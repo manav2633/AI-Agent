@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Metrics - Multi-Agent Framework</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+</head>
+<body>
+    <header>
+        <h1>Performance Metrics</h1>
+        <nav>
+            <a th:href="@{/}">Dashboard</a>
+            <a th:href="@{/executions}">Executions</a>
+            <a th:href="@{/benchmarks}">Benchmarks</a>
+            <a th:href="@{/metrics}" class="active">Metrics</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- System Overview -->
+        <section class="card">
+            <h2>System Performance Overview</h2>
+            <div class="grid-4">
+                <div class="metric-card">
+                    <h3>Success Rate</h3>
+                    <span class="metric-value large" th:text="${systemSummary.overallSuccessRate != null ? #numbers.formatDecimal(systemSummary.overallSuccessRate, 1, 1) + '%' : 'N/A'}">95.2%</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Avg Response Time</h3>
+                    <span class="metric-value large" th:text="${systemSummary.overallAverageResponseTime != null ? #numbers.formatDecimal(systemSummary.overallAverageResponseTime, 1, 0) + 'ms' : 'N/A'}">1,247ms</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Consistency</h3>
+                    <span class="metric-value large" th:text="${systemSummary.overallConsistencyScore != null ? #numbers.formatDecimal(systemSummary.overallConsistencyScore, 1, 1) + '%' : 'N/A'}">88.5%</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Active Frameworks</h3>
+                    <span class="metric-value large" th:text="${systemSummary.frameworkCount != null ? systemSummary.frameworkCount : '0'}">3</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Framework Comparison -->
+        <section class="card">
+            <h2>Framework Performance Comparison</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Framework</th>
+                            <th>Success Rate</th>
+                            <th>Avg Response Time</th>
+                            <th>Consistency Score</th>
+                            <th>Robustness Index</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="metric : ${comparison}">
+                            <td th:text="${metric.frameworkType.displayName}">Spring AI</td>
+                            <td>
+                                <span th:class="${'badge ' + (metric.successRate >= 90 ? 'success' : metric.successRate >= 70 ? 'warn' : 'error')}"
+                                      th:text="${metric.successRate != null ? #numbers.formatDecimal(metric.successRate, 1, 1) + '%' : 'N/A'}">95.0%</span>
+                            </td>
+                            <td th:text="${metric.averageResponseTimeMs != null ? #numbers.formatDecimal(metric.averageResponseTimeMs, 1, 0) + ' ms' : 'N/A'}">1,200 ms</td>
+                            <td th:text="${metric.consistencyScore != null ? #numbers.formatDecimal(metric.consistencyScore, 1, 1) + '%' : 'N/A'}">88.5%</td>
+                            <td th:text="${metric.robustnessIndex != null ? #numbers.formatDecimal(metric.robustnessIndex, 1, 1) + '%' : 'N/A'}">85.0%</td>
+                            <td>
+                                <span th:class="${'badge ' + (metric.overallReliabilityScore >= 90 ? 'success' : 
+                                                metric.overallReliabilityScore >= 80 ? 'warn' : 'error')}"
+                                      th:text="${metric.performanceGrade}">A</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(comparison)}">
+                            <td colspan="6" class="text-center">No metrics available yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Top Performers and Distribution -->
+        <div class="grid-2">
+            <section class="card">
+                <h2>Top Performing Frameworks</h2>
+                <div class="rank-list">
+                    <div th:each="performer, iterStat : ${topPerformers}" class="rank-item">
+                        <span class="rank" th:text="${iterStat.index + 1}">1</span>
+                        <div class="rank-details">
+                            <strong th:text="${performer.frameworkType}">Spring AI</strong>
+                            <span class="score" th:text="${performer.compositeScore != null ? #numbers.formatDecimal(performer.compositeScore, 1, 1) + '%' : 'N/A'}">95.2%</span>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(topPerformers)}" class="text-center">
+                        No performance data available
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Reliability Distribution</h2>
+                <div class="distribution-chart">
+                    <div th:each="dist : ${distribution}" class="distribution-item">
+                        <span class="dist-label" th:text="${dist.key}">Excellent</span>
+                        <div class="dist-bar">
+                            <div class="dist-fill" th:style="'width: ' + (${dist.value != null && dist.value > 0 ? (dist.value * 20) : 0}) + '%'"></div>
+                        </div>
+                        <span class="dist-value" th:text="${dist.value}">5</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Performance Chart -->
+        <section class="card">
+            <h2>Performance Trends</h2>
+            <div class="chart-container">
+                <canvas id="trendsChart" width="800" height="400"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script th:src="@{/js/metrics.js}"></script>
+    <script th:inline="javascript">
+        const comparison = /*[[${comparison}]]*/ [];
+        const distribution = /*[[${distribution}]]*/ {};
+        
+        if (typeof initMetrics === 'function') {
+            initMetrics(comparison, distribution);
+        }
+    </script>
+</body>
+</html>

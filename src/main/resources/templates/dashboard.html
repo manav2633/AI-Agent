@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Reliability Dashboard</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/responsive.css}">
+</head>
+<body>
+    <header>
+        <h1>Multi-Agent Reliability Framework</h1>
+        <nav>
+            <a th:href="@{/}">Dashboard</a>
+            <a th:href="@{/executions}">Executions</a>
+            <a th:href="@{/benchmarks}">Benchmarks</a>
+            <a th:href="@{/metrics}">Metrics</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- System Summary -->
+        <section class="card">
+            <h2>System Summary</h2>
+            <div class="grid-3">
+                <div class="metric-card">
+                    <h3>Success Rate</h3>
+                    <span class="metric-value" th:text="${systemSummary.overallSuccessRate != null ? #numbers.formatDecimal(systemSummary.overallSuccessRate, 1, 2) + '%' : 'N/A'}">0%</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Avg Response Time</h3>
+                    <span class="metric-value" th:text="${systemSummary.overallAverageResponseTime != null ? #numbers.formatDecimal(systemSummary.overallAverageResponseTime, 1, 0) + ' ms' : 'N/A'}">0 ms</span>
+                </div>
+                <div class="metric-card">
+                    <h3>Consistency Score</h3>
+                    <span class="metric-value" th:text="${systemSummary.overallConsistencyScore != null ? #numbers.formatDecimal(systemSummary.overallConsistencyScore, 1, 2) + '%' : 'N/A'}">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Execute Agent Task -->
+        <section class="card">
+            <h2>Execute Agent Task</h2>
+            <form th:action="@{/executions/execute}" method="post" id="execution-form">
+                <div class="grid-2">
+                    <label>Framework
+                        <select name="frameworkType" required>
+                            <option th:each="framework : ${frameworks}" 
+                                    th:value="${framework}" 
+                                    th:text="${framework.displayName}">Framework</option>
+                        </select>
+                    </label>
+                    <label>Async Execution
+                        <select name="async">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </label>
+                </div>
+                <label>Task Description
+                    <input type="text" name="taskDescription" required placeholder="Describe the task">
+                </label>
+                <label>Task Input
+                    <textarea name="taskInput" required rows="4" placeholder="Enter task input"></textarea>
+                </label>
+                <button type="submit">Execute Task</button>
+            </form>
+        </section>
+
+        <!-- Recent Executions -->
+        <section class="card">
+            <h2>Recent Executions</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Framework</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="execution : ${recentExecutions}">
+                            <td th:text="${execution.id}">1</td>
+                            <td th:text="${execution.frameworkType}">SPRING_AI</td>
+                            <td>
+                                <span th:class="${'badge ' + (execution.status == T(com.agentframework.model.ExecutionStatus).COMPLETED ? 'success' : 
+                                                execution.status == T(com.agentframework.model.ExecutionStatus).FAILED ? 'error' : 'warn')}"
+                                      th:text="${execution.status}">COMPLETED</span>
+                            </td>
+                            <td th:text="${execution.executionDurationMs != null ? execution.executionDurationMs + ' ms' : 'N/A'}">1000 ms</td>
+                            <td th:text="${#temporals.format(execution.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</td>
+                            <td>
+                                <a th:href="@{/execution/{id}(id=${execution.id})}" class="btn-small">View</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(recentExecutions)}">
+                            <td colspan="6" class="text-center">No executions yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Framework Comparison Chart -->
+        <section class="card" th:if="${not #lists.isEmpty(frameworkComparison)}">
+            <h2>Framework Performance Comparison</h2>
+            <div class="chart-container">
+                <canvas id="comparisonChart" width="800" height="400"></canvas>
+            </div>
+        </section>
+
+        <!-- Active Benchmarks -->
+        <section class="card" th:if="${not #maps.isEmpty(activeBenchmarks)}">
+            <h2>Active Benchmarks</h2>
+            <div class="benchmark-list">
+                <div th:each="benchmark : ${activeBenchmarks}" class="benchmark-item">
+                    <h4 th:text="${benchmark.value.name}">Benchmark Name</h4>
+                    <p>Status: <span th:text="${benchmark.value.status}" class="badge">RUNNING</span></p>
+                    <p>Progress: <span th:text="${benchmark.value.completedExecutions}">0</span>/<span th:text="${benchmark.value.totalExecutions}">10</span></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script th:src="@{/js/dashboard.js}"></script>
+    <script th:inline="javascript">
+        // Pass server data to client-side JavaScript
+        const frameworkComparison = /*[[${frameworkComparison}]]*/ [];
+        const systemSummary = /*[[${systemSummary}]]*/ {};
+        
+        // Initialize dashboard
+        if (typeof initDashboard === 'function') {
+            initDashboard(frameworkComparison, systemSummary);
+        }
+    </script>
+</body>
+</html>

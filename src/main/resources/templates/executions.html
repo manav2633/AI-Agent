@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Executions - Multi-Agent Framework</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+</head>
+<body>
+    <header>
+        <h1>Agent Executions</h1>
+        <nav>
+            <a th:href="@{/}">Dashboard</a>
+            <a th:href="@{/executions}" class="active">Executions</a>
+            <a th:href="@{/benchmarks}">Benchmarks</a>
+            <a th:href="@{/metrics}">Metrics</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Execute New Task -->
+        <section class="card">
+            <h2>Execute New Task</h2>
+            <form th:action="@{/executions/execute}" method="post">
+                <div class="grid-2">
+                    <label>Framework
+                        <select name="frameworkType" required>
+                            <option th:each="framework : ${frameworks}" 
+                                    th:value="${framework}" 
+                                    th:text="${framework.displayName}">Framework</option>
+                        </select>
+                    </label>
+                    <label>Expected Output (Optional)
+                        <input type="text" name="expectedOutput" placeholder="Expected result">
+                    </label>
+                </div>
+                <label>Task Description
+                    <input type="text" name="taskDescription" required>
+                </label>
+                <label>Task Input
+                    <textarea name="taskInput" required rows="4"></textarea>
+                </label>
+                <div class="actions">
+                    <button type="submit">Execute</button>
+                    <button type="button" onclick="location.reload()">Refresh</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Execution Statistics -->
+        <section class="card">
+            <h2>Execution Statistics by Framework</h2>
+            <div class="stats-grid">
+                <div th:each="stat : ${stats}" class="stat-card">
+                    <h3 th:text="${stat.key.displayName}">Framework</h3>
+                    <div class="stat-metrics">
+                        <p>Total: <strong th:text="${stat.value.total}">0</strong></p>
+                        <p>Success: <strong th:text="${stat.value.successful}">0</strong></p>
+                        <p>Failed: <strong th:text="${stat.value.failed}">0</strong></p>
+                        <p>Success Rate: <strong th:text="${stat.value.successRate + '%'}">0%</strong></p>
+                        <p>Avg Duration: <strong th:text="${stat.value.averageDurationMs + ' ms'}">0 ms</strong></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- All Executions -->
+        <section class="card">
+            <h2>All Executions</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Framework</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="execution : ${executions}">
+                            <td th:text="${execution.id}">1</td>
+                            <td th:text="${execution.frameworkType}">SPRING_AI</td>
+                            <td th:text="${#strings.abbreviate(execution.taskDescription, 50)}">Task description...</td>
+                            <td>
+                                <span th:class="${'badge ' + (execution.status == T(com.agentframework.model.ExecutionStatus).COMPLETED ? 'success' : 
+                                                execution.status == T(com.agentframework.model.ExecutionStatus).FAILED ? 'error' : 'warn')}"
+                                      th:text="${execution.status}">COMPLETED</span>
+                            </td>
+                            <td th:text="${execution.executionDurationMs != null ? execution.executionDurationMs + ' ms' : 'N/A'}">1000 ms</td>
+                            <td th:text="${#temporals.format(execution.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</td>
+                            <td>
+                                <a th:href="@{/execution/{id}(id=${execution.id})}" class="btn-small">View Details</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
